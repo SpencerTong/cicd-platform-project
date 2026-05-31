@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Spring Boot parent provides sensible defaults for dependencies and plugins.
+         It pins compatible versions of every library so we don't have to. -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.cicdplatform</groupId>
+    <artifactId>api</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>api</name>
+    <description>CI/CD Platform API Service</description>
+
+    <properties>
+        <!-- Tell Maven and Spring Boot to compile for Java 21. -->
+        <java.version>21</java.version>
+    </properties>
+
+    <dependencies>
+        <!-- spring-boot-starter-web pulls in Spring MVC + embedded Tomcat.
+             This is everything we need to write REST endpoints. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- spring-boot-starter-test pulls in JUnit 5 + MockMvc for our tests.
+             scope=test means it's never included in the production JAR. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- The Spring Boot Maven plugin packages the app into a single
+                 executable "fat JAR" that includes all dependencies.
+                 This is the JAR we'll copy into the Docker runtime image. -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
