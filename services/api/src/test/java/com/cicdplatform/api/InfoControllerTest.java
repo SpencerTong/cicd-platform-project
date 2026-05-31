@@ -6,6 +6,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+// Wildcard import from MockMvcResultMatchers — gives us status(), isOk(), jsonPath(), etc.
+// jsonPath() uses Jayway JsonPath syntax: "$.fieldName" reads the top-level JSON field.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // @WebMvcTest loads only the web layer (controllers) — no database, no full context.
@@ -19,6 +21,7 @@ class InfoControllerTest {
 
     @Test
     void health_returnsStatusUp() throws Exception {
+        // /health is a minimal liveness endpoint — just a status field, nothing else.
         mockMvc.perform(get("/health"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UP"));
@@ -26,6 +29,7 @@ class InfoControllerTest {
 
     @Test
     void info_returnsAppName() throws Exception {
+        // "cicd-platform-api" must match the hardcoded value in InfoController.
         mockMvc.perform(get("/api/info"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.app").value("cicd-platform-api"));
