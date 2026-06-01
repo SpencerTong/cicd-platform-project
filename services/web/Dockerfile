@@ -29,6 +29,12 @@ RUN npm run build
 # =============================================================================
 FROM nginx:alpine
 
+# Upgrade all Alpine packages to pick up the latest security patches.
+# nginx:alpine pins a specific Alpine release; OS-level CVEs (e.g. libxml2)
+# are fixed in patch releases that the base image hasn't incorporated yet.
+# apk upgrade ensures we always ship the most current OS packages.
+RUN apk upgrade --no-cache
+
 # Remove nginx's default config and replace with ours.
 # Our config adds the /api proxy rule that routes API requests to the
 # Spring Boot container on the Docker Compose network.
