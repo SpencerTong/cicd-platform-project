@@ -1,22 +1,9 @@
-# =============================================================================
-# Docker Compose Configuration — CI/CD Platform
-# =============================================================================
-#
-# This file wires both services (API and Web) together on a shared private
-# network. Docker Compose automatically creates the network, starts both
-# containers, and handles service discovery using container names as hostnames.
-#
-# The React frontend (web) uses nginx to serve static files and proxies
-# /api/* requests to the Spring Boot API container.
+# Docker Compose wires both containers together on a shared private network.
 #
 # Usage:
 #   Start:   docker compose up --build
 #   Stop:    docker compose down
 #   Rebuild: docker compose up --build (rebuilds changed images)
-#
-# =============================================================================
-
-version: '3.9'
 
 services:
 
@@ -25,48 +12,22 @@ services:
     build:
       context: ./services/api
       dockerfile: Dockerfile
-    container_name: api
     ports:
       # Exposes the API directly on localhost:8080 so you can test it with curl
       # without going through the web container. Useful during development.
       - "8080:8080"
-    # Optionally set environment variables (add here if needed in Phase 3+)
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    # Health check helps Docker Compose know when the service is ready.
-    # This prevents the web container from trying to connect before the API is running.
-    # Using wget instead of curl since the base image is Alpine and curl may not be available.
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
 
   # The React frontend served by nginx
   web:
     build:
       context: ./services/web
       dockerfile: Dockerfile
-    container_name: web
     ports:
       # Maps nginx's internal port 80 to localhost:3000.
       # Open http://localhost:3000 in your browser.
       - "3000:80"
     depends_on:
-      api:
-        # Wait for the api container to pass its health check before starting web.
-        # This ensures the API is ready before the web container tries to connect.
-        condition: service_healthy
-    # The web container depends on the api container being reachable via the
-    # service name "api" on the Docker Compose network. This is handled
-    # automatically by Docker Compose — no extra networking config needed.
-    environment:
-      - VITE_API_URL=http://api:8080
-
-# Named network allows explicit control and better debugging.
-# By default, Docker Compose creates a network for all services.
-# Leaving this implicit is fine for a simple two-service setup.
-networks:
-  default:
-    name: cicd-platform-network
+      # Ensures the api container starts before web. Note: this only controls
+      # start order, not readiness. The React app handles API unavailability
+      # gracefully with a loading/error state.
+      - api
