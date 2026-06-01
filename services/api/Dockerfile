@@ -42,6 +42,9 @@ WORKDIR /app
 # Copy ONLY the compiled JAR from Stage 1. Everything else — Maven, the SDK,
 # source code, build caches — is left behind and never enters this image.
 # Result: ~200MB final image instead of ~700MB.
+# Note: the JAR name is derived from artifactId + version in pom.xml.
+# A production Dockerfile might rename it to remove the version string,
+# but for this project keeping it explicit is clearer for learning.
 COPY --from=builder /app/target/api-0.0.1-SNAPSHOT.jar app.jar
 
 # Document that the app listens on port 8080.

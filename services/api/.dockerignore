@@ -1,0 +1,7 @@
+# Exclude build output and IDE files from the Docker build context.
+# Without this, Docker sends everything in the directory to the daemon —
+# including compiled classes and local config — which slows builds and
+# risks leaking local state into the image.
+target/
+.idea/
+*.iml
