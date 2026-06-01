@@ -1,0 +1,82 @@
+# CI pipeline for the React web frontend service.
+#
+# Runs on every push to main or PR targeting main when files under
+# services/web/ change. Also triggers when this workflow file itself
+# changes.
+
+name: CI — Web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Only run when web service files or this workflow change.
+      - 'services/web/**'
+      - '.github/workflows/ci-web.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/web/**'
+      - '.github/workflows/ci-web.yml'
+
+# Explicit permissions — same as ci-api.yml.
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # Install Node 20 and restore the npm cache.
+      # cache-dependency-path points to services/web/package-lock.json so the
+      # cache key is computed from the web service's lockfile, not the repo root.
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: services/web/package-lock.json
+
+      # Install exact dependency versions from package-lock.json.
+      # npm ci fails if the lockfile is out of sync with package.json — this
+      # catches dependency drift early, before it reaches production.
+      - name: Install dependencies
+        working-directory: services/web
+        run: npm ci
+
+      # Authenticate Docker to GHCR using the built-in GITHUB_TOKEN.
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # Build the image. The multi-stage Dockerfile runs `npm run build` (Vite)
+      # inside Stage 1 — so the Docker build itself verifies the app compiles.
+      # Tagged with :sha-<commit> and :latest.
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ghcr.io/spencertong/cicd-platform-web:sha-${{ github.sha }} \
+            -t ghcr.io/spencertong/cicd-platform-web:latest \
+            ./services/web
+
+      # Scan the built image for vulnerabilities before pushing.
+      # Same configuration as ci-api.yml — fail on HIGH/CRITICAL, skip unfixed.
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/spencertong/cicd-platform-web:sha-${{ github.sha }}
+          format: table
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      # Push to GHCR only on pushes to main — not on PRs.
+      - name: Push to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker push ghcr.io/spencertong/cicd-platform-web:sha-${{ github.sha }}
+          docker push ghcr.io/spencertong/cicd-platform-web:latest
