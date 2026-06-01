@@ -22,6 +22,12 @@
     <properties>
         <!-- Tell Maven and Spring Boot to compile for Java 21. -->
         <java.version>21</java.version>
+        <!-- Override the Tomcat version bundled by Spring Boot.
+             Spring Boot exposes this property so you can patch Tomcat
+             without waiting for a full Spring Boot release. Used here to
+             resolve CVEs detected by the Trivy scan in CI.
+             See: https://tomcat.apache.org/security-10.html -->
+        <tomcat.version>10.1.55</tomcat.version>
     </properties>
 
     <dependencies>
