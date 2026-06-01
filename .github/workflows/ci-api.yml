@@ -85,6 +85,9 @@ jobs:
           exit-code: '1'
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          # .trivyignore lists CVEs we've reviewed and accepted because the upstream
+          # fix version hasn't been released yet. Each entry is documented with a reason.
+          trivyignores: .trivyignore
 
       # Push both tags to GHCR — but only on pushes to main, not on PRs.
       # On a PR we want to build and scan (verify the code is good) without

@@ -73,6 +73,8 @@ jobs:
           exit-code: '1'
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          # Same .trivyignore as the API pipeline — shared acknowledged CVEs.
+          trivyignores: .trivyignore
 
       # Push to GHCR only on pushes to main — not on PRs.
       - name: Push to GHCR

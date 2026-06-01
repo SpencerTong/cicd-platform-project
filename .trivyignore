@@ -1,0 +1,13 @@
+# Acknowledged vulnerabilities with no available fix in our current dependency tree.
+# These are reviewed and accepted — revisit when upstream releases the fix version.
+
+# CVE-2026-40973: Arbitrary Code Execution via predictable session tokens in spring-boot.
+# Fix requires spring-boot 3.5.14 or 4.0.6, which are not yet released.
+# Revisit when Spring Boot 3.5.14 is available.
+CVE-2026-40973
+
+# CVE-2025-41249: Spring Framework Annotation Detection Vulnerability in spring-core.
+# Fix requires spring-core 6.2.11. Spring Boot 3.5.0 bundles spring-core 6.2.7
+# and has not yet published a BOM that pulls in 6.2.11.
+# Revisit with next Spring Boot patch release.
+CVE-2025-41249
