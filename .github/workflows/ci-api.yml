@@ -1,0 +1,99 @@
+# CI pipeline for the Spring Boot API service.
+#
+# Runs on every push to main or PR targeting main when files under
+# services/api/ change. Also triggers when this workflow file itself
+# changes so you can test pipeline modifications.
+
+name: CI — API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Only run when API service files or this workflow change.
+      # Ignoring unrelated changes (e.g. React app edits) keeps CI fast.
+      - 'services/api/**'
+      - '.github/workflows/ci-api.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/api/**'
+      - '.github/workflows/ci-api.yml'
+
+# Explicit permissions follow the principle of least privilege.
+# contents: read  — allows checkout
+# packages: write — allows pushing images to GHCR
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-test-push:
+    # ubuntu-latest is the standard GitHub-hosted runner for Linux containers.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Pull the repository contents onto the runner.
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # Install Java 21 and restore the Maven dependency cache.
+      # cache: 'maven' tells setup-java to cache ~/.m2 keyed on pom.xml's hash.
+      # Cache hit: dependencies restored in ~5s instead of re-downloaded (~60s).
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # Run the four MockMvc tests. If any fail, the pipeline stops here —
+      # a broken app never gets packaged or pushed.
+      - name: Run tests
+        working-directory: services/api
+        run: mvn test --batch-mode
+
+      # Authenticate Docker to GHCR using the built-in GITHUB_TOKEN.
+      # No manual secret setup needed — GitHub provides this token automatically
+      # on every run, scoped to this repository.
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # Build the image and tag it with two tags:
+      # :sha-<commit> — immutable tag tied to this exact commit (used by Helm/ArgoCD later)
+      # :latest       — always points to the most recent main-branch build
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ghcr.io/spencertong/cicd-platform-api:sha-${{ github.sha }} \
+            -t ghcr.io/spencertong/cicd-platform-api:latest \
+            ./services/api
+
+      # Scan the built image for known vulnerabilities before pushing.
+      # This is "shift-left" security — catching CVEs in the pipeline rather
+      # than discovering them in production.
+      #
+      # exit-code: 1    — pipeline fails if any HIGH or CRITICAL CVEs are found
+      # ignore-unfixed  — skips vulnerabilities with no available fix yet
+      #                   (without this, base image CVEs outside our control
+      #                   would permanently block the pipeline)
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/spencertong/cicd-platform-api:sha-${{ github.sha }}
+          format: table
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          # .trivyignore lists CVEs we've reviewed and accepted because the upstream
+          # fix version hasn't been released yet. Each entry is documented with a reason.
+          trivyignores: .trivyignore
+
+      # Push both tags to GHCR — but only on pushes to main, not on PRs.
+      # On a PR we want to build and scan (verify the code is good) without
+      # publishing an image that could be mistaken for a production build.
+      - name: Push to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker push ghcr.io/spencertong/cicd-platform-api:sha-${{ github.sha }}
+          docker push ghcr.io/spencertong/cicd-platform-api:latest
