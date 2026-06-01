@@ -1,0 +1,33 @@
+# Docker Compose wires both containers together on a shared private network.
+#
+# Usage:
+#   Start:   docker compose up --build
+#   Stop:    docker compose down
+#   Rebuild: docker compose up --build (rebuilds changed images)
+
+services:
+
+  # The Spring Boot REST API — serves /health and /api/info
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    ports:
+      # Exposes the API directly on localhost:8080 so you can test it with curl
+      # without going through the web container. Useful during development.
+      - "8080:8080"
+
+  # The React frontend served by nginx
+  web:
+    build:
+      context: ./services/web
+      dockerfile: Dockerfile
+    ports:
+      # Maps nginx's internal port 80 to localhost:3000.
+      # Open http://localhost:3000 in your browser.
+      - "3000:80"
+    depends_on:
+      # Ensures the api container starts before web. Note: this only controls
+      # start order, not readiness. The React app handles API unavailability
+      # gracefully with a loading/error state.
+      - api
