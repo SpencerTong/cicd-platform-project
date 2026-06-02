@@ -1,0 +1,9 @@
+# Chart metadata. apiVersion: v2 is required for Helm 3.
+# version is the chart version (changes when you update the chart).
+# appVersion is the application version (informational only).
+apiVersion: v2
+name: api
+description: CI/CD Platform Spring Boot API
+type: application
+version: 0.1.0
+appVersion: "0.0.1"

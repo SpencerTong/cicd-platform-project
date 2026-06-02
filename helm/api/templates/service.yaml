@@ -1,0 +1,19 @@
+# A Service gives the pod a stable internal address inside the cluster.
+# Pods are ephemeral — they get new IPs when restarted. The Service IP stays constant.
+# type: ClusterIP means the service is only reachable inside the cluster (not from outside).
+# External access goes through the Ingress controller.
+apiVersion: v1
+kind: Service
+metadata:
+  # Named api-svc (Release.Name=api, so "api-svc").
+  # This is the hostname other pods use to reach the API: api-svc.cicd.svc.cluster.local
+  name: {{ .Release.Name }}-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  # Routes traffic to pods with label app=api
+  selector:
+    app: {{ .Release.Name }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+  type: ClusterIP
