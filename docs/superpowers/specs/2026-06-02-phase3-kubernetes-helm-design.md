@@ -61,7 +61,8 @@ helm/
     └── templates/
         ├── deployment.yaml
         ├── service.yaml
-        └── ingress.yaml
+        ├── ingress.yaml
+        └── configmap.yaml  ← nginx.conf with Helm-templated API URL
 .github/
 └── workflows/
     └── cd.yml
