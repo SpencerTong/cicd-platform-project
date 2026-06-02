@@ -1,0 +1,23 @@
+# Default values for the web chart.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/spencertong/cicd-platform-web
+  tag: latest
+  pullPolicy: Always
+
+service:
+  # nginx inside the container listens on port 80.
+  port: 80
+
+ingress:
+  host: web.cicd.local
+  className: nginx
+
+# The URL nginx uses to proxy /api/* requests to the Spring Boot API.
+# In Kubernetes, services are reachable by their DNS name:
+#   <service-name>.<namespace>.svc.cluster.local
+# This is different from Docker Compose where the service was just "api".
+# The Deployment mounts this as a ConfigMap so docker-compose.yml is unaffected.
+apiServiceUrl: "http://api-svc.cicd.svc.cluster.local:8080"
