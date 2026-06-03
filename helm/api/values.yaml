@@ -1,0 +1,25 @@
+# Default values for the api chart.
+# Override at deploy time with --set or --values flags.
+
+# Number of pod replicas. 1 is fine for local development.
+replicaCount: 1
+
+image:
+  # The GHCR image repository (without the tag).
+  repository: ghcr.io/spencertong/cicd-platform-api
+  # Default tag. The CD workflow overrides this with sha-<commit> on every deploy.
+  tag: latest
+  # Always pull the image — ensures the cluster uses the latest version,
+  # not a cached copy from a previous deployment.
+  pullPolicy: Always
+
+service:
+  # The port the Spring Boot app listens on inside the container.
+  port: 8080
+
+ingress:
+  # The hostname that routes to this service.
+  # Must match the /etc/hosts entry on your laptop.
+  host: api.cicd.local
+  # Use the nginx ingress class we installed in Task 2.
+  className: nginx

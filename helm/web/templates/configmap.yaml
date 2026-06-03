@@ -1,0 +1,28 @@
+# ConfigMap holds the nginx config that overrides the one baked into the Docker image.
+# Why override? The Docker image has nginx.conf with proxy_pass http://api:8080
+# (the Docker Compose service name). In Kubernetes the API is at api-svc.cicd.svc.cluster.local.
+# Rather than rebuild the image for each environment, we mount this ConfigMap over
+# the baked-in file — the image stays the same, the config changes per environment.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-nginx-config
+  namespace: {{ .Release.Namespace }}
+data:
+  default.conf: |
+    server {
+        listen 80;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Proxy /api/* to the Spring Boot API service using Kubernetes DNS.
+        location /api/ {
+            proxy_pass {{ .Values.apiServiceUrl }};
+            proxy_set_header Host $host;
+        }
+
+        # Serve index.html for all other paths (React SPA routing).
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+    }

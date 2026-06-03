@@ -1,0 +1,23 @@
+# An Ingress exposes the service outside the cluster via the nginx ingress controller.
+# The controller reads this resource and configures nginx to route
+# requests for api.cicd.local to the api-svc Service.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  namespace: {{ .Release.Namespace }}
+spec:
+  # nginx is the ingress class we installed. Tells Kubernetes which
+  # ingress controller should handle this Ingress resource.
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-svc
+                port:
+                  number: {{ .Values.service.port }}

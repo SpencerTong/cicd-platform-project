@@ -1,0 +1,70 @@
+# CD pipeline — deploys to the local k3s cluster after CI succeeds.
+#
+# Triggered by workflow_run: fires when CI — API or CI — Web completes.
+# Only runs if the triggering CI workflow succeeded — failed builds never deploy.
+#
+# Uses a self-hosted runner (local-k3s) that runs on the same machine as k3s,
+# so it can reach the cluster directly without exposing it externally.
+# Phase 4 (ArgoCD) will replace this workflow entirely — ArgoCD runs inside
+# the cluster and watches the repo, eliminating the need for any deploy step here.
+
+name: CD — Deploy
+
+on:
+  workflow_run:
+    # Listen for these CI workflows to complete.
+    workflows: ["CI — API", "CI — Web"]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # Only deploy if the triggering CI run succeeded.
+    # A failed build should never reach the cluster.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    # Run on our self-hosted runner which has direct access to the local k3s cluster.
+    # 'self-hosted' matches any self-hosted runner; 'local-k3s' is the runner name.
+    runs-on: [self-hosted, local-k3s]
+
+    steps:
+      # Checks out the repo so the Helm chart files in helm/ are available to the runner.
+      # Note: this checks out the CD workflow's branch, not the triggering CI commit —
+      # the image tag is passed via --set below, not built from source here.
+      - name: Checkout repo for Helm charts
+        uses: actions/checkout@v4
+
+      # Determine which service to deploy based on which CI workflow triggered this run.
+      # github.event.workflow_run.name is the name field from the CI workflow file.
+      - name: Determine service
+        id: service
+        run: |
+          if [[ "${{ github.event.workflow_run.name }}" == "CI — API" ]]; then
+            echo "name=api" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.workflow_run.name }}" == "CI — Web" ]]; then
+            echo "name=web" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown workflow: ${{ github.event.workflow_run.name }}" >&2
+            exit 1
+          fi
+
+      # Deploy using Helm.
+      # --install: creates the release if it doesn't exist yet (idempotent).
+      # --create-namespace: creates the cicd namespace if it doesn't exist yet.
+      # --timeout 5m: fail the job if the rollout doesn't complete within 5 minutes,
+      #   rather than hanging indefinitely (e.g. on a bad image tag or crashloop).
+      # --set image.tag: overrides the tag in values.yaml with the exact commit SHA
+      #   that was built and pushed by the triggering CI run.
+      # github.event.workflow_run.head_sha is the commit SHA of the CI run that triggered this.
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install ${{ steps.service.outputs.name }} \
+            helm/${{ steps.service.outputs.name }}/ \
+            --namespace cicd \
+            --create-namespace \
+            --wait \
+            --timeout 5m \
+            --set image.tag=sha-${{ github.event.workflow_run.head_sha }}

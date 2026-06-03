@@ -1,0 +1,37 @@
+# A Deployment tells Kubernetes to run N identical pod replicas
+# and replace them automatically if they crash.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  # selector tells the Deployment which pods it owns.
+  # Must match the labels in the pod template below.
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}
+          # Helm substitutes .Values.image.repository and .Values.image.tag here.
+          # The CD workflow overrides image.tag with sha-<commit> on each deploy.
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          # Liveness probe: Kubernetes restarts the pod if /health stops responding.
+          # This is why we added GET /health in Phase 1 — it pays off here.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
