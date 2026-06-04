@@ -122,7 +122,7 @@ permissions:
 
 - name: Update image tag in values.yaml
   run: |
-    sed -i "s/tag:.*/tag: sha-${{ github.event.workflow_run.head_sha }}/" \
+    sed -i '' "s/tag:.*/tag: sha-${{ github.event.workflow_run.head_sha }}/" \
       helm/${{ steps.service.outputs.name }}/values.yaml
     git config user.name "github-actions[bot]"
     git config user.email "github-actions[bot]@users.noreply.github.com"
