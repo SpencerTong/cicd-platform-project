@@ -12,6 +12,7 @@ public class InfoController {
 
     // Phase 3 CD verification — this comment triggers CI → CD → cluster update.
     // GET /health — used by Kubernetes as a liveness probe in Phase 3.
+    // CD loop verification attempt 2.
     // Returns a simple JSON object so health checkers can parse the response.
     @GetMapping("/health")
     public Map<String, String> health() {
