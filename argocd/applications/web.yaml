@@ -1,5 +1,7 @@
 # ArgoCD Application manifest for the React frontend service.
 # Same structure as api.yaml — watches helm/web/ for changes.
+# When cd.yml commits a new image.tag to helm/web/values.yaml,
+# ArgoCD detects the change and runs helm upgrade automatically.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -11,6 +13,7 @@ spec:
   source:
     repoURL: https://github.com/SpencerTong/cicd-platform-project
     targetRevision: main
+    # Path to the Helm chart for the web service.
     path: helm/web
     helm:
       valueFiles:
