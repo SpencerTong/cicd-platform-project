@@ -1,0 +1,28 @@
+# ArgoCD Application manifest for the React frontend service.
+# Same structure as api.yaml — watches helm/web/ for changes.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/SpencerTong/cicd-platform-project
+    targetRevision: main
+    path: helm/web
+    helm:
+      valueFiles:
+        - values.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cicd
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
