@@ -1,4 +1,5 @@
 # CD pipeline — deploys to the local k3s cluster after CI succeeds.
+# Workflow re-registered to fix GitHub workflow_run activation issue.
 #
 # Triggered by workflow_run: fires when CI — API or CI — Web completes.
 # Only runs if the triggering CI workflow succeeded — failed builds never deploy.
