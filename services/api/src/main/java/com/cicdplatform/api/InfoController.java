@@ -10,6 +10,9 @@ import java.util.Map;
 @RestController
 public class InfoController {
 
+    // Phase 4 GitOps verification — this change flows through the full loop:
+    // CI builds the image → CD commits the tag → ArgoCD syncs the cluster.
+
     // GET /health — used by Kubernetes as a liveness probe in Phase 3.
     // Returns a simple JSON object so health checkers can parse the response.
     @GetMapping("/health")
