@@ -1,0 +1,50 @@
+# ArgoCD Application manifest for the Spring Boot API service.
+#
+# An Application tells ArgoCD:
+#   - WHERE to find the desired state (this repo, helm/api/ path)
+#   - WHERE to deploy it (the cicd namespace in this cluster)
+#   - HOW to sync (automatically, with pruning and self-healing)
+#
+# When cd.yml commits a new image.tag to helm/api/values.yaml,
+# ArgoCD detects the change and runs helm upgrade automatically.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: api
+  # Applications must live in the argocd namespace.
+  namespace: argocd
+spec:
+  # 'default' is the built-in ArgoCD project that allows deploying to any namespace.
+  project: default
+
+  source:
+    # The GitHub repo ArgoCD watches for changes.
+    repoURL: https://github.com/SpencerTong/cicd-platform-project
+    # The branch to watch. ArgoCD polls this branch for changes.
+    targetRevision: main
+    # The path within the repo that contains the Helm chart.
+    path: helm/api
+    helm:
+      # Which values file to use. ArgoCD reads this file and deploys
+      # whatever image.tag is set in it — updated by cd.yml on each CI run.
+      valueFiles:
+        - values.yaml
+
+  destination:
+    # Deploy to this cluster (kubernetes.default.svc means the local cluster
+    # ArgoCD is running in — no external cluster URL needed).
+    server: https://kubernetes.default.svc
+    # Deploy into the cicd namespace where the services already live.
+    namespace: cicd
+
+  syncPolicy:
+    automated:
+      # prune: true — delete resources that exist in the cluster but not in Git.
+      # Prevents orphaned resources from accumulating.
+      prune: true
+      # selfHeal: true — if someone manually changes the cluster (e.g. kubectl edit),
+      # ArgoCD reverts it back to what Git says. Git is always the source of truth.
+      selfHeal: true
+    syncOptions:
+      # Create the cicd namespace if it doesn't exist yet.
+      - CreateNamespace=true
