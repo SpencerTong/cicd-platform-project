@@ -56,6 +56,9 @@ jobs:
       # Update the image tag in values.yaml.
       # sed -i '' is macOS syntax (the self-hosted runner is macOS).
       # This replaces the "tag: <anything>" line with the new SHA tag.
+      # Note: sed works because values.yaml has exactly one "tag:" key. A
+      # production pipeline would use a YAML-aware tool like `yq` to target
+      # image.tag precisely and avoid matching any future tag: keys.
       # ArgoCD polls GitHub every 3 minutes — once it sees this commit,
       # it runs helm upgrade automatically. No manual deploy needed.
       - name: Update image tag in values.yaml
