@@ -48,7 +48,7 @@ Let a visitor type a short message in the web UI and watch it flow through the c
 |---|---|
 | `GET /api/message` | Reads `message.txt` from the classpath, returns `{ "message": "..." }`. The web UI displays this. |
 | `POST /api/deploy` | Accepts `{ message, guardToken }`. Validates guard + message, commits `message.txt` via GitHub API, returns `{ "sha": "...", "runUrl": null }`. Returns `409` if a deploy is already in flight. |
-| `GET /api/status` | Aggregator. Returns stage statuses, current live message, and the GitHub Actions run URL. Polled by the frontend. |
+| `GET /api/status?sha=<target>` | Aggregator. **Stateless** — derives all stage statuses from the target SHA passed by the frontend, not from in-memory state. Returns stage statuses, current live message, and the GitHub Actions run URL. Polled by the frontend. |
 | `GET /health`, `GET /api/info` | Unchanged (from earlier phases). |
 
 ### `/api/status` response shape
@@ -72,15 +72,26 @@ Let a visitor type a short message in the web UI and watch it flow through the c
 ```
 Stage values: `pending` | `running` | `done` | `failed`.
 
+### Statelessness (critical correctness point)
+`/api/status` must NOT depend on in-memory state, because the API pod is **replaced mid-loop** — when ArgoCD rolls out the new image, the pod holding any in-memory deploy state is terminated. If status tracking relied on that state, it would break exactly when the loop finishes. Instead:
+- The frontend remembers the target SHA (returned by `POST /api/deploy`) and passes it on every `GET /api/status?sha=<target>` call.
+- The API derives every stage purely from external sources for that SHA. Any pod — old or new — answers identically.
+- Stage derivation:
+  - `commit`: the target SHA exists on main (always true once deploy returns).
+  - `build` / `test` / `scan` / `push`: from the `ci-api.yml` workflow run's job/step states for that SHA (GitHub Actions API).
+  - `cd`: the `cd.yml` run for that SHA completed (or `helm/api/values.yaml` now contains `sha-<target>`).
+  - `argocd`: the rendered Deployment's image tag matches `sha-<target>` (optional ArgoCD API query for a richer "Synced" signal; degrades gracefully if the ArgoCD token is absent).
+  - `live`: the currently-served message equals the message committed in the target SHA — i.e., the new pod is up and serving it.
+
 ### Internal components
-- **`GitHubClient`** — wraps GitHub REST calls using Spring's built-in `RestClient` (no new dependency). Two operations: (a) commit a file update to `message.txt` on main (read current file SHA, PUT new content), (b) list recent workflow runs for `ci-api.yml` / `cd.yml` filtered to the target commit SHA.
-- **`ArgoCdClient`** — queries the ArgoCD API in-cluster (`https://argocd-server.argocd.svc`) for the `api` Application's sync/health status. Uses an ArgoCD auth token (also a k8s Secret).
-- **`StatusService`** — merges GitHubClient + ArgoCdClient + the locally-served message into the `/api/status` view. Maps raw GitHub job/step states and ArgoCD sync state onto the eight named stages.
-- **`DeployService`** — guard validation, in-flight lock (single deploy at a time), message sanitization, then delegates to GitHubClient to commit.
+- **`GitHubClient`** — wraps GitHub REST calls using Spring's built-in `RestClient` (no new dependency). Operations: (a) commit a file update to `message.txt` on main (read current file SHA, PUT new content); (b) list workflow runs for `ci-api.yml` / `cd.yml` filtered to the target commit SHA and read job/step conclusions.
+- **`ArgoCdClient`** (optional) — queries the ArgoCD API in-cluster for the `api` Application's sync/health status to enrich the `argocd` stage. If `ARGOCD_TOKEN` is not configured, the `argocd` stage falls back to comparing the live Deployment image tag. The demo works either way.
+- **`StatusService`** — given a target SHA, derives the eight stage statuses from GitHubClient (+ optional ArgoCdClient) + the locally-served message. Stateless: no instance fields tracking a deploy.
+- **`DeployService`** — guard validation, message sanitization, and a best-effort in-flight lock for the `POST /api/deploy` call only (the commit returns quickly, before any pod swap, so an in-memory lock here is acceptable). Delegates to GitHubClient to commit.
 
 ### Configuration / Secrets
-- `GITHUB_TOKEN` — fine-grained PAT, scoped to this repo only, `contents: write` + `actions: read`. Stored as a k8s Secret in `cicd`, injected as env var.
-- `ARGOCD_TOKEN` — ArgoCD API token (read-only account). k8s Secret, env var.
+- `GITHUB_TOKEN` — fine-grained PAT, scoped to this repo only, `contents: write` + `actions: read`. Stored as a k8s Secret in `cicd`, injected as env var. (Required.)
+- `ARGOCD_TOKEN` — ArgoCD API token (read-only account). k8s Secret, env var. (Optional — enriches the `argocd` stage; absent = fall back to comparing the Deployment image tag.)
 - `DEPLOY_GUARD_TOKEN` — non-secret shared string the frontend sends. Config value.
 - `GITHUB_REPO` — `SpencerTong/cicd-platform-project`. Config value.
 - The Helm `api` chart gains a templated Secret reference + env vars (`deployment.yaml` / `values.yaml`).
@@ -97,7 +108,7 @@ The demo is a **new section on the existing page**, below the current info dashb
   `Commit → Build → Test → Scan → Push → Deploy (CD) → ArgoCD Sync → Live`.
   Node states: pending (hollow grey), running (pulsing blue), done (solid green ✓), failed (red ✗). Connectors fill green as the flow progresses. Driven by `/api/status`.
 - **`StageExplainer`** — beginner-facing panel beneath the flow. As each stage activates, shows a plain-English card explaining what is happening and why it exists in a CI/CD pipeline (copy below). Doubles as blog raw material.
-- **`useStatus`** — polling hook; polls `GET /api/status` every ~2s while a deploy is in flight; stops when `live` is `done`, on `failed`, or after a 12-minute timeout.
+- **`useStatus`** — polling hook; remembers the target SHA from the deploy response and polls `GET /api/status?sha=<target>` every ~2s while a deploy is in flight; stops when `live` is `done`, on `failed`, or after a 12-minute timeout. Tolerant of transient errors (the API pod is briefly unavailable during the rollout) — it keeps retrying rather than giving up.
 
 ### Per-stage explainer copy (beginner-facing)
 - **Commit** — "Your message was committed to Git. In GitOps, Git is the single source of truth — every change starts as a commit, which makes the whole history auditable and reversible."
@@ -133,8 +144,8 @@ The powerful credential (GitHub PAT) never leaves the cluster; the browser only 
 
 1. API: `message.txt` + `GET /api/message` (+ test). Deploy via existing pipeline, verify it shows in the cluster.
 2. API: `GitHubClient` + `POST /api/deploy` with guard, lock, validation (+ tests with a mocked GitHub API).
-3. API: `ArgoCdClient` + `StatusService` + `GET /api/status` (+ tests).
-4. Helm: add Secret refs + env vars to the `api` chart; create the k8s Secrets in the cluster.
+3. API: `StatusService` + stateless `GET /api/status?sha=` deriving stages from the GitHub Actions API + live-message comparison (+ tests). `ArgoCdClient` is an optional enrichment, added only if time permits.
+4. Helm: add Secret refs + env vars to the `api` chart; create the k8s Secret(s) in the cluster (`GITHUB_TOKEN` required; `ARGOCD_TOKEN` optional).
 5. Frontend: `DeployForm` + `useStatus` hook.
 6. Frontend: `PipelineFlow` horizontal visualization.
 7. Frontend: `StageExplainer` with the copy above.
@@ -146,8 +157,8 @@ The powerful credential (GitHub PAT) never leaves the cluster; the browser only 
 
 - [ ] `GET /api/message` returns the current message from `message.txt`
 - [ ] `POST /api/deploy` commits the message via GitHub API, guarded + locked + validated
-- [ ] `GET /api/status` reports accurate stage status (GitHub Actions + ArgoCD + live message)
-- [ ] GitHub PAT + ArgoCD token stored as k8s Secrets, injected into the API pod
+- [ ] `GET /api/status?sha=` reports accurate stage status, derived statelessly (survives the API pod being replaced mid-loop)
+- [ ] GitHub PAT stored as a k8s Secret, injected into the API pod (ArgoCD token optional)
 - [ ] Web UI: type a message → horizontal pipeline animates through all 8 stages live
 - [ ] Per-stage explainer shows beginner-friendly what/why text as each stage runs
 - [ ] On completion the new message displays as "✓ Live"; failures and timeouts handled gracefully
