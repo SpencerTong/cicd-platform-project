@@ -73,7 +73,7 @@ public class StatusService {
 
         // If CI failed, mark the first non-done CI stage failed for a clear visual.
         if (ciFailed) {
-            for (String s : List.of("build", "test", "scan", "push")) {
+            for (String s : List.of("test", "build", "scan", "push")) {
                 if (!"done".equals(stages.get(s))) { stages.put(s, "failed"); break; }
             }
         }
