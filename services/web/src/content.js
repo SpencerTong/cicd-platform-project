@@ -1,0 +1,25 @@
+// Beginner-readable copy for the "stack, explained" cards. One entry per tool:
+// what it is, the one job it does here, and why it matters. No assumed knowledge.
+export const STACK = [
+  { name: 'Docker', what: 'Packages an app and everything it needs into a portable image.',
+    job: 'Builds the API and web images so they run identically everywhere.',
+    why: 'Eliminates "works on my machine" — the same image runs in CI and in the cluster.' },
+  { name: 'GitHub Actions', what: 'Runs automated workflows when you push code.',
+    job: 'Builds, tests, and scans each image on every change, then pushes it.',
+    why: 'Catches problems automatically before anything ships — continuous integration.' },
+  { name: 'Trivy', what: 'Scans container images for known security vulnerabilities.',
+    job: 'Fails the pipeline if the image has HIGH/CRITICAL CVEs.',
+    why: 'Finds security issues early, in the pipeline, not in production ("shift-left").' },
+  { name: 'GHCR', what: "GitHub's container registry — storage for built images.",
+    job: 'Holds every image, tagged with the exact commit it was built from.',
+    why: 'A traceable, versioned home for images the cluster pulls from.' },
+  { name: 'Helm', what: 'A package manager for Kubernetes — templated manifests.',
+    job: 'Defines the API and web deployments as charts with a swappable image tag.',
+    why: 'One source of truth for how each service is deployed, configurable per environment.' },
+  { name: 'k3s', what: 'A lightweight Kubernetes distribution.',
+    job: 'Runs the cluster locally that actually hosts the services.',
+    why: 'Real Kubernetes on a laptop — no cloud bill — to learn the real mechanics.' },
+  { name: 'ArgoCD', what: 'A GitOps controller that lives inside the cluster.',
+    job: 'Watches the repo and reconciles the cluster to match what Git says.',
+    why: 'Deployments become declarative: change Git, the cluster follows. No manual deploys.' },
+]
