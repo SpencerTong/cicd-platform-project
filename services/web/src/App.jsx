@@ -89,7 +89,7 @@ export default function App() {
             Play at real-world speed (~3 min) instead of compressed
           </label>
         )}
-        <DeployForm onSubmit={handleSubmit} disabled={tracking} />
+        <DeployForm onSubmit={handleSubmit} disabled={tracking || mode === 'detecting'} />
         {tracking && submitted && <p className="demo-pending">Deploying: "{submitted}"</p>}
         {started && <PipelineFlow stages={stages} />}
         {started && <StageExplainer stages={stages} timedOut={timedOut} runUrl={runUrl} />}
