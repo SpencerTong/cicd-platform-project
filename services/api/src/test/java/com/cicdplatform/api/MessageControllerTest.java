@@ -21,9 +21,14 @@ class MessageControllerTest {
     private MockMvc mockMvc;
 
     @Test
-    void message_returnsSeededMessage() throws Exception {
+    void message_returnsNonEmptyMessage() throws Exception {
+        // Assert the CONTRACT (a non-empty message field), NOT a specific value.
+        // The interactive demo rewrites message.txt on every deploy, so asserting
+        // an exact string would make CI fail the moment anyone uses the demo —
+        // the very pipeline this test gates. Test the shape, not the content.
         mockMvc.perform(get("/api/message"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Hello from the GitOps loop"));
+                .andExpect(jsonPath("$.message").isString())
+                .andExpect(jsonPath("$.message").isNotEmpty());
     }
 }
