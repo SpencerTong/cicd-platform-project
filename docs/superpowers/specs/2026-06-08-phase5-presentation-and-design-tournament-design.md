@@ -124,3 +124,9 @@ Each mockup covers the full page (hero → diagram → demo → stack cards → 
 - [ ] 3 design directions mocked; winner chosen and implemented in React/CSS
 - [ ] Architecture-diagram SVG built to match, embedded in the page
 - [ ] `npm run build` yields a static site that works with no backend (the public link); deployed to a free host
+
+---
+
+## Tournament Result (addendum)
+
+**Chosen direction: Direction 2 — "Terminal / Ops."** Dark background (~#0b1020 page, #0f172a panels), monospace font stack, green (#4ade80) + cyan (#7dd3fc) accents, `$ ` prefix on the hero H1 and `# ` on section headings, `>` bullets for the lessons list. Pipeline node states: done = green (#22c55e), running = cyan (#38bdf8), pending = dark slate with border, failed = red (#dc2626). The architecture diagram SVG (Task 8) themes to this palette. No mixed elements requested — implement Direction 2 as shown in the mockup.
