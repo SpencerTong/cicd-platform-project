@@ -15,9 +15,13 @@ export function useStatus(sha) {
 
   useEffect(() => {
     if (!sha) return
+    // Clear any previous run's final state immediately so a new deploy locks the
+    // form right away (otherwise stale stages from the last run linger for one poll).
+    setStatus(null)
     startRef.current = Date.now()
     setTimedOut(false)
     let active = true
+    let timerId = null
 
     async function tick() {
       if (!active) return
@@ -36,10 +40,13 @@ export function useStatus(sha) {
         setTimedOut(true)
         return
       }
-      setTimeout(tick, POLL_MS)
+      timerId = setTimeout(tick, POLL_MS)
     }
     tick()
-    return () => { active = false }
+    return () => {
+      active = false
+      if (timerId) clearTimeout(timerId)
+    }
   }, [sha])
 
   return { status, timedOut }
