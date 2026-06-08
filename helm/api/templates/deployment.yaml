@@ -25,6 +25,21 @@ spec:
           # The CD workflow overrides image.tag with sha-<commit> on each deploy.
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Interactive demo env vars (Phase 5).
+          # GITHUB_TOKEN is pulled from a Secret so the credential never lives in Git
+          # or the image. The repo + guard token are non-secret config from values.yaml.
+          {{- if .Values.demo.enabled }}
+          env:
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.demo.secretName }}
+                  key: GITHUB_TOKEN
+            - name: GITHUB_REPO
+              value: {{ .Values.demo.githubRepo | quote }}
+            - name: DEPLOY_GUARD_TOKEN
+              value: {{ .Values.demo.guardToken | quote }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.service.port }}
           # Liveness probe: Kubernetes restarts the pod if /health stops responding.

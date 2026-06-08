@@ -23,3 +23,13 @@ ingress:
   host: api.cicd.local
   # Use the nginx ingress class we installed in Task 2.
   className: nginx
+
+# Interactive demo configuration (Phase 5).
+# githubToken comes from a pre-created Kubernetes Secret (NOT stored in Git).
+# guardToken is a non-secret shared string the frontend sends; repo is owner/repo.
+demo:
+  enabled: true
+  githubRepo: SpencerTong/cicd-platform-project
+  guardToken: local-demo
+  # Name of the pre-created Secret holding key GITHUB_TOKEN.
+  secretName: api-demo-secret

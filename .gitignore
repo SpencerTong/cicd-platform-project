@@ -1,2 +1,6 @@
 .superpowers/
 node_modules/
+actions-runner/
+# Local scratch notes (lowercase variant of the tracked CLAUDE.md) — may hold
+# secrets/tokens during setup; never commit it.
+claude.md
