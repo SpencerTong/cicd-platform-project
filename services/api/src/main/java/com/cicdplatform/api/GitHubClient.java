@@ -3,6 +3,7 @@ package com.cicdplatform.api;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.net.URI;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -15,14 +16,26 @@ import java.util.Map;
 public class GitHubClient {
 
     private static final String PATH = "services/api/src/main/resources/message.txt";
+    private static final String BASE = "https://api.github.com";
     private final DemoConfig config;
     private final RestClient http;
 
     public GitHubClient(DemoConfig config) {
         this.config = config;
-        this.http = RestClient.builder()
-                .baseUrl("https://api.github.com")
-                .build();
+        this.http = RestClient.builder().build();
+    }
+
+    // Build an absolute URI by plain string concatenation so the slashes in
+    // "owner/repo" and the file path stay LITERAL.
+    //
+    // Why not RestClient.uri("/repos/{repo}/...", repo)? That URI-template form
+    // percent-encodes the slash in "SpencerTong/cicd-platform-project" to %2F,
+    // producing /repos/SpencerTong%2Fcicd-platform-project/... which the GitHub
+    // API rejects with 404. Our inputs (repo name, fixed file path, hex SHAs,
+    // workflow file names) contain no characters that need encoding, so placing
+    // them directly into the URL is both correct and safe here.
+    private URI uri(String suffix) {
+        return URI.create(BASE + suffix);
     }
 
     private RestClient.RequestHeadersSpec<?> auth(RestClient.RequestHeadersSpec<?> spec) {
@@ -42,7 +55,7 @@ public class GitHubClient {
 
         // 1. Get the current file to obtain its blob sha.
         Map<String, Object> current = (Map<String, Object>) auth(
-                http.get().uri("/repos/{repo}/contents/{path}", repo, PATH)
+                http.get().uri(uri("/repos/" + repo + "/contents/" + PATH))
         ).retrieve().body(Map.class);
         String blobSha = (String) current.get("sha");
 
@@ -56,7 +69,7 @@ public class GitHubClient {
                 "branch", "main"
         );
         Map<String, Object> resp = (Map<String, Object>) auth(
-                http.put().uri("/repos/{repo}/contents/{path}", repo, PATH)
+                http.put().uri(uri("/repos/" + repo + "/contents/" + PATH))
                         .body(body)
         ).retrieve().body(Map.class);
 
@@ -69,8 +82,9 @@ public class GitHubClient {
     @SuppressWarnings("unchecked")
     public Map<String, Object> workflowRunForSha(String workflowFile, String headSha) {
         Map<String, Object> resp = (Map<String, Object>) auth(
-                http.get().uri("/repos/{repo}/actions/workflows/{wf}/runs?head_sha={sha}&per_page=1",
-                        config.githubRepo(), workflowFile, headSha)
+                http.get().uri(uri("/repos/" + config.githubRepo()
+                        + "/actions/workflows/" + workflowFile
+                        + "/runs?head_sha=" + headSha + "&per_page=1"))
         ).retrieve().body(Map.class);
         List<Map<String, Object>> runs = (List<Map<String, Object>>) resp.get("workflow_runs");
         return (runs == null || runs.isEmpty()) ? null : runs.get(0);
@@ -80,7 +94,7 @@ public class GitHubClient {
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> jobsForRun(long runId) {
         Map<String, Object> resp = (Map<String, Object>) auth(
-                http.get().uri("/repos/{repo}/actions/runs/{id}/jobs", config.githubRepo(), runId)
+                http.get().uri(uri("/repos/" + config.githubRepo() + "/actions/runs/" + runId + "/jobs"))
         ).retrieve().body(Map.class);
         List<Map<String, Object>> jobs = (List<Map<String, Object>>) resp.get("jobs");
         return jobs == null ? List.of() : jobs;
@@ -90,7 +104,7 @@ public class GitHubClient {
     @SuppressWarnings("unchecked")
     public String messageAtRef(String ref) {
         Map<String, Object> resp = (Map<String, Object>) auth(
-                http.get().uri("/repos/{repo}/contents/{path}?ref={ref}", config.githubRepo(), PATH, ref)
+                http.get().uri(uri("/repos/" + config.githubRepo() + "/contents/" + PATH + "?ref=" + ref))
         ).retrieve().body(Map.class);
         String encoded = ((String) resp.get("content")).replaceAll("\\s", "");
         return new String(Base64.getDecoder().decode(encoded)).trim();
