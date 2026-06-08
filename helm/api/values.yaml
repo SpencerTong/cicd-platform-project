@@ -8,7 +8,7 @@ image:
   # The GHCR image repository (without the tag).
   repository: ghcr.io/spencertong/cicd-platform-api
   # Default tag. The CD workflow overrides this with sha-<commit> on every deploy.
-  tag: sha-5db204b0468ae36680061f564bf21eaf4cb127b6
+  tag: sha-0faf62553f0298d706687f764b9a43302a1e33c8
   # Always pull the image — ensures the cluster uses the latest version,
   # not a cached copy from a previous deployment.
   pullPolicy: Always
