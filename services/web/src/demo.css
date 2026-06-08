@@ -36,11 +36,15 @@
 .flow-node.flow-running { background: #2563eb; border-color: #2563eb; color: #fff; animation: pulse 1.1s ease-in-out infinite; }
 .flow-node.flow-failed { background: #dc2626; border-color: #dc2626; color: #fff; }
 .flow-connector.flow-done { background: #16a34a; }
+.flow-connector.flow-failed { background: #dc2626; }
 
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.45 } }
 
 .demo-live {
   margin-top: 16px; font-weight: 700; color: #16a34a; font-size: 15px;
+}
+.demo-pending {
+  margin: 8px 0; font-weight: 600; color: #6366f1; font-size: 14px;
 }
 .explainer {
   margin-top: 16px; background: #f8fafc; border: 1px solid #e2e8f0;

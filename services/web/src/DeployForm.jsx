@@ -27,6 +27,7 @@ export default function DeployForm({ onDeployed, disabled }) {
       <input
         className="deploy-input"
         type="text"
+        aria-label="Deployment message"
         maxLength={100}
         placeholder="Type a message to deploy through the pipeline…"
         value={message}

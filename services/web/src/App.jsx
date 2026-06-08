@@ -11,6 +11,7 @@ export default function App() {
   const [info, setInfo] = useState(null)
   const [error, setError] = useState(null)
   const [sha, setSha] = useState(null)
+  const [submitted, setSubmitted] = useState('')
   const { status, timedOut } = useStatus(sha)
 
   useEffect(() => {
@@ -48,7 +49,8 @@ export default function App() {
           Type a message and watch it travel through the entire pipeline — build, test,
           scan, deploy, and sync — until it goes live in the cluster.
         </p>
-        <DeployForm onDeployed={(s) => setSha(s)} disabled={tracking} />
+        <DeployForm onDeployed={(s, msg) => { setSha(s); setSubmitted(msg) }} disabled={tracking} />
+        {tracking && submitted && <p className="demo-pending">Deploying: "{submitted}"</p>}
         {sha && <PipelineFlow stages={stages} />}
         {sha && <StageExplainer stages={stages} timedOut={timedOut} runUrl={status?.runUrl} />}
         {sha && stages.live === 'done' && (
