@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { deploy } from './api'
 
-// Input + Deploy button. On submit, POSTs the message, gets the commit sha,
-// and hands it up to the parent (App) which starts tracking the pipeline.
-export default function DeployForm({ onDeployed, disabled }) {
+// Input + Deploy button. Mode-agnostic: it calls the injected onSubmit(message),
+// which App wires to either the real API deploy or the local simulation. The form
+// itself never knows which mode it's in.
+export default function DeployForm({ onSubmit, disabled }) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -13,8 +13,7 @@ export default function DeployForm({ onDeployed, disabled }) {
     setError(null)
     setSubmitting(true)
     try {
-      const { sha } = await deploy(message.trim())
-      onDeployed(sha, message.trim())
+      await onSubmit(message.trim())
     } catch (err) {
       setError(err.message)
     } finally {
@@ -35,7 +34,7 @@ export default function DeployForm({ onDeployed, disabled }) {
         disabled={disabled || submitting}
       />
       <button className="deploy-button" type="submit" disabled={disabled || submitting || !message.trim()}>
-        {submitting ? 'Committing…' : 'Deploy'}
+        {submitting ? 'Working…' : 'Deploy'}
       </button>
       {error && <p className="deploy-error">{error}</p>}
     </form>
