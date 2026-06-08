@@ -31,6 +31,7 @@
 .flow-node.flow-running { background: #38bdf8; border-color: #38bdf8; color: #0b1020; animation: pulse 1.1s ease-in-out infinite; }
 .flow-node.flow-failed { background: #dc2626; border-color: #dc2626; color: #fff; }
 .flow-connector.flow-done { background: #22c55e; }
+.flow-connector.flow-running { background: #38bdf8; }
 .flow-connector.flow-failed { background: #dc2626; }
 
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.45 } }
