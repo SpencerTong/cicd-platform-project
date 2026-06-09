@@ -4,7 +4,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/spencertong/cicd-platform-web
-  tag: sha-31d07d6f111f0da40078452ed46f050a2c78c728
+  tag: sha-b3a3561e5f71c10adcac215acf8178746f86b171
   pullPolicy: Always
 
 service:
