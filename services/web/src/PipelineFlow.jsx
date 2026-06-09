@@ -1,10 +1,13 @@
 // Horizontal pipeline visualization. Eight nodes connected left-to-right;
 // each reflects its stage state from /api/status. Connectors fill green as
 // the flow progresses. Purely presentational — all state comes from props.
+// Order matches the REAL pipeline's execution order: the unit tests run before
+// the Docker image is built (you test the source, then package it), so "Test"
+// sits before "Build" here. That keeps the dots lighting up strictly left-to-right.
 const STAGES = [
   ['commit', 'Commit'],
-  ['build',  'Build'],
   ['test',   'Test'],
+  ['build',  'Build'],
   ['scan',   'Scan'],
   ['push',   'Push'],
   ['cd',     'Deploy'],

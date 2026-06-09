@@ -7,7 +7,9 @@ import { useState, useEffect } from 'react'
 // Honesty: the per-stage *realistic* durations (what a real run takes) are shown in
 // the UI labels (Task 7), while playback is compressed by default so a visitor sees
 // the whole loop in ~25s. `realTime` plays it at true pace.
-export const STAGE_ORDER = ['commit', 'build', 'test', 'scan', 'push', 'cd', 'argocd', 'live']
+// Test before Build — matches the real pipeline (tests run, then the image is built),
+// so the simulation plays in the same left-to-right order the diagram shows.
+export const STAGE_ORDER = ['commit', 'test', 'build', 'scan', 'push', 'cd', 'argocd', 'live']
 
 // Realistic real-world seconds per stage (shown in labels; also the real-time pace).
 export const REAL_SECONDS = {
