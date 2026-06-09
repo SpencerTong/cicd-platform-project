@@ -5,12 +5,6 @@
 // It must match DEPLOY_GUARD_TOKEN configured on the API (Helm values).
 export const GUARD_TOKEN = 'local-demo'
 
-export async function getMessage() {
-  const res = await fetch('/api/message')
-  if (!res.ok) throw new Error(`message HTTP ${res.status}`)
-  return res.json()
-}
-
 export async function deploy(message) {
   const res = await fetch('/api/deploy', {
     method: 'POST',
