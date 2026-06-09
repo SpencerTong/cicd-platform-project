@@ -16,7 +16,8 @@ const COPY = {
   live:   ['Live', 'The new pod is serving traffic. The message you typed traveled through the entire pipeline and is now live — the platform updated itself from a single commit.'],
 }
 
-const ORDER = ['commit', 'build', 'test', 'scan', 'push', 'cd', 'argocd', 'live']
+// Same order as the pipeline diagram: Test before Build (tests run before the image build).
+const ORDER = ['commit', 'test', 'build', 'scan', 'push', 'cd', 'argocd', 'live']
 
 const FAILED_BODY = 'This stage failed, so the pipeline stopped and nothing shipped — exactly what should happen when something is wrong. Check the run for details.'
 
