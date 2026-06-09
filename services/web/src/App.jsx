@@ -117,6 +117,26 @@ export default function App() {
         </ul>
       </section>
 
+      {/* 7. Honest limitations — named upfront, with the design choices they forced. */}
+      <section className="limits">
+        <h2>Honest limitations</h2>
+        <p>
+          Every layer here is real and works end to end — but it runs on a laptop, and that
+          constraint shaped the design:
+        </p>
+        <ul>
+          <li><strong>Local k3s, not a cloud cluster.</strong> So this always-on public page runs
+            a <em>simulated</em> replay of the pipeline (clearly badged). The same build runs the
+            real loop when pointed at the local cluster.</li>
+          <li><strong>The demo redeploys its own service.</strong> So <code>/api/status</code> is
+            stateless — it survives the pod being replaced mid-rollout instead of losing track at
+            the finish line.</li>
+          <li><strong>A shared guard token, not real auth</strong> on the deploy endpoint —
+            proportionate to a demo. The real credential (a GitHub token) stays server-side in a
+            Kubernetes Secret, never in the browser.</li>
+        </ul>
+      </section>
+
       <footer className="footer">
         <a href="https://github.com/SpencerTong/cicd-platform-project" target="_blank" rel="noreferrer">Repo</a>
         <span> · </span>
