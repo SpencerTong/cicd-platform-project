@@ -64,3 +64,32 @@ which this gave me a real, hands-on foundation for.
 
 The difference between "I've touched pipelines" and "I understand pipelines" turned out to be
 about four weekends and a lot of small, honest failures. Worth it.
+
+---
+
+## Footnote: what's real, what isn't, and the choices that forced
+
+To be upfront — every layer here is real and works end to end (real CI, real Trivy scans,
+real Helm releases, real ArgoCD reconciling a real cluster). But it runs on a laptop, and
+that constraint *shaped the design* in ways worth naming:
+
+- **It runs on local k3s (Rancher Desktop), not a cloud cluster.** No real traffic, uptime,
+  or high availability. → **Consequence:** the always-on public demo runs in a **simulated
+  mode** — a faithful replay of the same eight stages with realistic durations, clearly badged
+  "Simulated." It exists *because* the real cluster isn't publicly hosted; the same build runs
+  the real pipeline when pointed at the local cluster.
+- **The demo redeploys the very service handling the request.** → **Consequence:** the status
+  endpoint (`/api/status?sha=`) is **stateless** — it derives progress from the GitHub Actions
+  API and a live-message comparison, so it keeps working even as the pod serving it is replaced
+  mid-rollout. In-memory tracking would have broken exactly at the finish line.
+- **The deploy endpoint has a shared guard token, not real authentication.** → **Consequence:**
+  proportionate to a demo; the powerful credential (a fine-grained GitHub token) never reaches
+  the browser — it lives server-side in a Kubernetes Secret. Production would put real auth in front.
+- **CI can be blocked by base-image CVEs with no upstream fix yet.** → **Consequence:** the scan
+  uses `ignore-unfixed` plus a documented `.trivyignore`, so the pipeline fails on *fixable*
+  HIGH/CRITICAL issues without being permanently red on things outside my control.
+- **CD currently runs on a self-hosted runner** (a Phase-3 leftover that only commits a tag).
+  → **Consequence:** it needs the laptop on; moving it to a hosted runner is a trivial next step.
+
+None of these are hidden — they're the honest edges of a learning project, and reasoning about
+them out loud is half the point.
