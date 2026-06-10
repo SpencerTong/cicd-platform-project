@@ -137,6 +137,49 @@ export default function App() {
         </ul>
       </section>
 
+      {/* 8. See the real thing — recording of the genuine pipeline run */}
+      <section className="realrun">
+        <h2>See the real thing</h2>
+        <p>
+          The demo above runs in <strong>simulated</strong> mode — this is a static site with no
+          always-on cluster behind it. Below is a screen recording of the <em>exact same pipeline</em>
+          running for real against a live Kubernetes cluster: a message typed in, traveling through
+          test, build, scan, deploy, and an ArgoCD rollout, until it's live.
+        </p>
+
+        {/* TODO: replace YOUR_VIDEO_ID with the real YouTube video id. */}
+        <div className="realrun-embed">
+          <iframe
+            src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
+            title="The real pipeline running end to end"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </div>
+
+        <div className="realrun-caption">
+          <h3>What the final screen means (and why it's success)</h3>
+          <p>
+            At the end you see the cluster finishing the deploy in a terminal. Reading the last frame:
+          </p>
+          <ul>
+            <li>Every new pod shows <strong>1/1 Running</strong> — that's the freshly built version
+              live and serving traffic. That's the whole goal, reached.</li>
+            <li>The old pods are gone. The web app's old pod reads <strong>Completed</strong> (its nginx
+              shut down cleanly), and the API's old pod reads <strong>Error</strong> — which sounds bad
+              but just means its Java process exited with a non-zero code when it was told to stop. It's
+              a normal shutdown, not a crash.</li>
+            <li>The brief <strong>ImagePullBackOff</strong> earlier was Kubernetes waiting for the
+              brand-new image and retrying until it could pull it — the system healing itself, not failing.</li>
+          </ul>
+          <p>
+            So the final picture — new pods Running, old pods retired — is exactly what a successful,
+            zero-downtime deploy looks like: the new version took over while the old one stepped down,
+            and nobody ran a single deploy command.
+          </p>
+        </div>
+      </section>
+
       <footer className="footer">
         <a href="https://github.com/SpencerTong/cicd-platform-project" target="_blank" rel="noreferrer">Repo</a>
         <span> · </span>
