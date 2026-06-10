@@ -147,10 +147,10 @@ export default function App() {
           test, build, scan, deploy, and an ArgoCD rollout, until it's live.
         </p>
 
-        {/* TODO: replace YOUR_VIDEO_ID with the real YouTube video id. */}
+        {/* TODO: replace 2pxR3Y-ElqQ with the real YouTube video id. */}
         <div className="realrun-embed">
           <iframe
-            src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
+            src="https://www.youtube.com/embed/2pxR3Y-ElqQ"
             title="The real pipeline running end to end"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
             allowFullScreen
